@@ -210,8 +210,6 @@
     - From the Ansible Server, test connectivity to rach worker node i.e `ssh -i ~/.ssh/ansible_key ansible@<worker-1-PRIVATE_IP_ADDRESS>` and `ssh -i ~/.ssh/ansible_key ansible@<worker-2-PRIVATE_IP_ADDRESS>`. If the configuration is correct, you should log in without being prompted for the `ansible` user's password.
     - *Note*: If you generated the SSH Key while logged in as `ubuntu`, switch to the `ansible` user (`su ansible`) and generate the key there. This keeps the key in the `ansible` user's home directory and makes it easier for Ansible to use it.
 
-* now from ansible user navigate to /etc/ansible path give ls -l where you can see the outputs ansible.config, hosts (which is default inventory, roles) next add your worker 1 and 2 nodes private-ip-address at the bottom of the file using `sudo vi hosts` now trying execute command `ansible all -m ping --user ansible --private-key ~/.ssh/ansible_key`, here all means we are considering all the ips we added in hosts file (which acts as default inventory), if we have a custom inventory file then we need to call as `-i inventory.ini`. here we have ansible as user so we need to provide `--user ansible`, and they are 2 ways of auth one is `--ask-pass` where we need to enter the password to communicate and 2nd way is by setting up ssh key pair i.e `--private-key` which is `~/.ssh/ansible_key`. now if we execute this `ansible all -m ping --user ansible --private-key ~/.ssh/ansible_key` we get the success.
-
 * **Configure the Ansible Inventory**:
     - Ansible uses an inventory file to keep track of the hosts (managed nodes) it needs to connect to. By default, the inventory file is named `hosts` and is located in the `/etc/ansible` directory.
     - **View the Default Ansible Files**
