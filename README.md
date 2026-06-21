@@ -81,9 +81,9 @@
         * Python3 installed (to run complex modules).
     - **Target accessibility**: The control node must be able to resolve the hostnames and IP addresses of the target node and reach them over the network (usually via port22).
 
-#### Ansible Environment Setup (AWS)
+#### **Ansible Environment Setup (AWS)**
 
-##### Using 3 ubuntu instances (`ubuntu-ansible-server`, `ubuntu-worker-1`, `ubuntu-worker-2`)
+##### **Using 3 ubuntu instances** (`ubuntu-ansible-server`, `ubuntu-worker-1`, `ubuntu-worker-2`)
 
 ###### **Create Ansible Server**: 
   * sign in to  the AWS Management Console.
@@ -243,7 +243,7 @@
 
       - The response when running above command looks like ![preview](Images/ansible4.png)
 
-##### Setting Up a Mixed Ansible Environment
+##### **Setting Up a Mixed Ansible Environment**
   * The environment setup for 
     - `redhat-ansible-server`
     - `ubuntu-worker-1` 
@@ -357,7 +357,7 @@
   ansible_ssh_private_key_file=~/.ssh/ansible_key
   ```
 
-##### Manual steps in setting up a website with Nginx (Ubuntu/Redhat)
+##### **Manual steps in setting up a website with Nginx (Ubuntu/Redhat)**
   * **Instance Launching and Networking**
     - Create an Ubuntu and a RedHat instance named `ubuntu-nginx-man-1` and `redhat-nginx-man-1` (or use names of your choice). Assign an existing PEM file if you have one; otherwise, create a new one.
 
@@ -408,7 +408,7 @@
   * Now open your browser and check whether you are able to reach the Nginx homepage. `http://<your-server-public-ip>`
     - *Note*: you can use `curl ifconfig.me` to find your public IP address without navigating to cloud ec2 console.
 
-##### Automating the website deployment using ansible-playbook (redhat ansible server) and manipulate worker nodes (redhat:httpd & ubuntu:apache2)
+##### **Automating the website deployment using ansible-playbook (redhat ansible server) and manipulate worker nodes (redhat:httpd & ubuntu:apache2)**
   * [Follow the steps provided under setting up a mixed ansible environment](#setting-up-a-mixed-ansible-environment) upto copying ssh public key to the worker nodes.
 
   * *Note*: While creating worker instances (redhat and ubuntu) try to enable http and https from anywhere under security group in-bound rules.
@@ -509,7 +509,7 @@
             - `-R`: Means Recursive. It fixes the main folder and every single subfolder and file inside it (like your CSS, JavaScript, and images).
             - `changed_when`: false: This is just for Ansible. Because restorecon is a raw Linux command, Ansible will always report it as a "Yellow / Changed" task. Adding this line forces Ansible to keep it "Green / OK" so your playbooks look clean
 
-#### Variables and Types of variables
+#### **Variables and Types of variables**
 
   * **Registered Variables**
     - One of the most powerful features in Ansible is the ability to capture the output of a task and use it later in the playbook. The register keyword stores the entire result of a task into a variable, giving you access to return codes, stdout, stderr, changed status, and module-specific data. This is essential for building playbooks that make decisions based on the actual state of the system rather than assumptions.
@@ -544,7 +544,7 @@
     | 11 (highest) | Extra vars -e |
 
 
-##### Configuring apache webserver on redhat (httpd) and ubunut (apache2) in parllel and hosting a gaming website dynamically.
+##### **Configuring apache webserver on redhat (httpd) and ubunut (apache2) in parllel and hosting a gaming website dynamically.**
 
   * configure the custom hosts file i.e inventory file
     - *Note*: when you use yaml format try to save the inventory file with `.yaml` extension i.e `inventory.yaml`
@@ -671,7 +671,7 @@
 
 
 
-##### Manual steps to install Apache Tomcat 10 with openjdk 21 on Ubuntu instance
+##### **Manual steps to install Apache Tomcat 10 with openjdk 21 on Ubuntu instance**
   * Create a ubuntu instance naming `ubuntu-tomcat-manual` (or choose name of your choice) and attach existing .pem key or create one if you dont have one and then enable `http(80)` and `https(443)` protocals. Later after launching instance try to edit inbound security rule enable `port 8080` since tomcat runs on port 8080. 
 
   * Now `ssh` into the ubuntu machine using <PUBLIC_IPADDRESS> i.e `ssh -i /User/jagadeesh/Downloads/ansible-keypair ubuntu@54.90.239.250` and then switch user to `root` i.e `sudo su -`.
@@ -783,7 +783,7 @@
             - **Host Manager** ![preview](Images/tomcat9.png)
 
 
-##### Exercise: Manual steps to install Apache Tomcat 10 with openjdk 21 on RedHat instance
+##### **Exercise: Manual steps to install Apache Tomcat 10 with openjdk 21 on RedHat instance**
   * Create a redhat instance naming `redhat-tomcat-manual` (or choose name of your choice) and attach existing .pem key or create one if you dont have one and then enable `http(80)` and `https(443)` protocals. Later after launching instance try to edit inbound security rule enable `port 8080` since tomcat runs on port 8080. 
 
   * Now `ssh` into the redhat machine using <PUBLIC_IPADDRESS> i.e `ssh -i /User/jagadeesh/Downloads/ansible-keypair ec2-user@54.210.155.84` and then switch user to `root` i.e `sudo su -`.
@@ -877,8 +877,8 @@
 
             - **Host Manager** ![preview](Images/tomcat18.png)  
 
-##### Exercise: Manual steps to install Jenkins Application inside Tomcat server
-  * **Note**: Increase the instance size to t3.medium 
+##### **Exercise: Manual steps to install Jenkins Application inside Tomcat server**
+  * **Note**: Increase the instance size to t3.medium because we want to deploy two applications i.e **Jenkins** and **Spring petClinic** 
 
   * By referring Jenkins [WAR file page](https://www.jenkins.io/doc/book/installing/war-file/) copy the war file and run wget command with that war file inside `/opt/tomcat/webapps` i.e `wget https://get.jenkins.io/war-stable/2.555.3/jenkins.war`
 
@@ -906,7 +906,7 @@
       * un the standalone command (and specify a different port if Tomcat is already running on 8080) i.e `java -jar /opt/jenkins/jenkins.war --httpPort=8081`
       * Access Jenkins via your browser at http://YOUR-SERVER-PRIVATE-IPADDRESS:8081 
 
-##### Exercise: Manual steps to Spring PetClinic Application inside Tomcat server
+##### **Exercise: Manual steps to Spring PetClinic Application inside Tomcat server**
 
   * **Install Git and Maven Dependencies**
       - Ensure your Red Hat system has Git and a Java Development Kit i.e `sudo dnf install git java-21-openjdk-devel -y`
@@ -927,3 +927,646 @@
 
   * Now the SpringPetClinic is successfully running. ![preview](Images/tomcat23.png)
 
+##### **Exercise: Create ansible-playbook by follow above manual steps in installing tomcat 10 with openjdk 21 on redhat server**
+  * This was the initial playbook in automating the tomcat installation on RedHat Server.
+    ```yaml
+    ---
+    - name: Installing Apache Tomcat server on Red Hat machine
+      hosts: 172.31.30.244
+      gather_facts: true
+      become: yes
+      vars:
+        website_url: https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.55/bin/apache-tomcat-10.1.55.tar.gz
+
+      tasks:
+        - name: Create tomcat group
+          ansible.builtin.group:
+            name: tomcat
+            state: present
+
+        - name: Create tomcat system user and home directory
+          ansible.builtin.user:
+            name: tomcat
+            system: true           # Replicates -r (system account)
+            create_home: true      # Replicates -m (create home directory)
+            group: tomcat          # Replicates -U (create group with same name)
+            home: /opt/tomcat      # Replicates -d /opt/tomcat
+            shell: /sbin/nologin   # Replicates -s /sbin/nologin
+            state: present
+
+        - name: Install the required dependencies i.e JDK and wget
+          ansible.builtin.dnf:
+            name:
+              - java-21-openjdk-devel
+              - wget
+            state: present
+            update_cache: true
+
+        - name: Download Tomcat archive to /tmp/
+          ansible.builtin.get_url:
+            url: "{{ website_url }}"
+            dest: /tmp/apache-tomcat-10.1.55.tar.gz
+            mode: '0755'
+
+        - name: Extract Tomcat archive to /opt/tomcat
+          ansible.builtin.unarchive:
+            src: /tmp/apache-tomcat-10.1.55.tar.gz
+            dest: /opt/tomcat
+            remote_src: true
+            extra_opts: [--strip-components=1]
+            owner: tomcat
+            group: tomcat
+
+        # sudo chown -R tomcat:tomcat /opt/tomcat/
+        - name: Ensure correct ownership on entire tomcat directory
+          ansible.builtin.file:
+            path: /opt/tomcat
+            owner: tomcat
+            group: tomcat
+            recurse: true
+            state: directory
+
+        # sudo chmod -R u+x /opt/tomcat/bin
+        - name: Make tomcat bin scripts executable for the owner
+          ansible.builtin.file:
+            path: /opt/tomcat/bin
+            mode: 'u+x'
+            recurse: true
+            state: directory
+
+        - name: Deploy tomcat-users.xml configuration from template
+          ansible.builtin.template:
+            src: templates/tomcat-users.xml.j2
+            dest: /opt/tomcat/conf/tomcat-users.xml
+            owner: tomcat
+            group: tomcat
+            mode: '0755'
+          notify: Restart tomcat
+
+        - name: Deploy context.xml for Tomcat Manager application
+          ansible.builtin.template:
+            src: templates/manager_context.xml.j2
+            dest: /opt/tomcat/webapps/manager/META-INF/context.xml
+            owner: tomcat
+            group: tomcat
+            mode: '0640'
+          notify: Restart tomcat
+
+        - name: Deploy context.xml for Tomcat Host-Manager application
+          ansible.builtin.template:
+            src: templates/host_manager_context.xml.j2
+            dest: /opt/tomcat/webapps/host-manager/META-INF/context.xml
+            owner: tomcat
+            group: tomcat
+            mode: '0640'
+          notify: Restart tomcat
+
+        - name: Dynamically find Java home directory
+          ansible.builtin.shell:
+            cmd: 'readlink -f /usr/bin/java | sed "s:/bin/java::"'
+          register: java_path_output
+          changed_when: false
+
+        - name: Set java_home_path fact from command output
+          ansible.builtin.set_fact:
+            java_home_path: "{{ java_path_output.stdout | trim }}"
+
+        - name: Display discovered Java Home path
+          ansible.builtin.debug:
+            msg: "The discovered Java Home path is: {{ java_home_path }}"
+
+        - name: Deploy tomcat.service systemd unit file
+          ansible.builtin.template:
+            src: templates/tomcat.service.j2
+            dest: /etc/systemd/system/tomcat.service
+            owner: tomcat
+            group: tomcat
+            mode: '0644'
+          notify:
+            - Reload systemd daemon
+            - Restart tomcat
+
+        - name: Ensure Tomcat service is enabled and started
+          ansible.builtin.systemd:
+            name: tomcat
+            state: started
+            enabled: true
+          register: tomcat_status
+
+        - name: Print Tomcat active status summary
+          ansible.builtin.debug:
+            msg: "Tomcat state is currently: {{ tomcat_status.status.ActiveState | default('N/A') }}"
+
+      handlers:
+        - name: Reload systemd daemon
+          ansible.builtin.systemd:
+            daemon_reload: true
+
+        - name: Restart tomcat
+          ansible.builtin.systemd:
+            name: tomcat
+            state: restarted  
+    ```
+  * **Note**: This error occured due to wrong java path assigned in `tomcat.service.j2`. To trouble shoot use `journalctl -xe` in worker node terminal 
+    ```
+    RUNNING HANDLER [Restart tomcat] **********************************************************************************************
+    fatal: [172.31.30.244]: FAILED! => {"changed": false, "msg": "Unable to restart service tomcat: Job for tomcat.service failed because the control process exited with error code.\nSee \"systemctl status tomcat.service\" and \"journalctl -xeu tomcat.service\" for details.\n"}
+    ```
+##### **Automate Tomcat Deployment on Worker Nodes using Templates and Group Vars (Create ansible-playbook with tomcat 10 and openjdk 21 on redhat server (control node) with 2 redhat workers and 2 ubuntu workers)**
+
+  - After automating the tasks using templates and group_vars, the tree looks like
+    ```
+    tomcat
+    ├── group_vars
+    │   └── all.yaml
+    ├── inventory.ini
+    ├── templates
+    │   ├── host_manager_context.xml.j2
+    │   ├── manager_context.xml.j2
+    │   ├── tomcat-users.xml.j2
+    │   └── tomcat.service.j2
+    └── tomcat.yaml    
+    ```
+  - `tomcat/group_vars/all.yaml`
+    * **Note**: File name should be readable by ansible; example i have given main.yaml and faced errors, after changing to all.yaml it worked.
+  ```yaml
+  ---
+  tomcat_website_url: https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.55/bin/apache-tomcat-10.1.55.tar.gz
+  group_name: tomcat
+  user_name: tomcat 
+  tomcat_home_directory: /opt/tomcat
+  tomcat_shell: "{{ '/sbin/nologin' if ansible_os_family == 'RedHat' else '/bin/false' }}" 
+  java_package: "{{ 'java-21-openjdk-devel' if ansible_os_family == 'RedHat' else 'openjdk-21-jdk' }}" #java_home_path: /usr/lib/jvm/java-21-openjdk (passing dynamically from tomcat.yaml)
+  ```
+  - `tomcat/templates/host_manager_context.xml.j2`
+  ```
+  <?xml version="1.0" encoding="UTF-8"?>
+  <!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+  -->
+  <Context antiResourceLocking="false" privileged="true" >
+    <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
+                    sameSiteCookies="strict" />
+  <!--  <Valve className="org.apache.catalina.valves.RemoteCIDRValve"
+          allow="127.0.0.0/8,::1/128" /> -->
+    <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.fil>
+  </Context>
+  ```
+  - `tomcat/templates/manager_context.xml.j2`
+  ```
+    <?xml version="1.0" encoding="UTF-8"?>
+  <!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+  -->
+  <Context antiResourceLocking="false" privileged="true" >
+    <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
+                    sameSiteCookies="strict" />
+  <!--  <Valve className="org.apache.catalina.valves.RemoteCIDRValve"
+          allow="127.0.0.0/8,::1/128" /> -->
+    <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.fil>
+  </Context>
+  ```
+  - `tomcat/templates/tomcat-users.xml.j2`
+  ```
+    <?xml version="1.0" encoding="UTF-8"?>
+  <!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+  -->
+  <tomcat-users xmlns="http://tomcat.apache.org/xml"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+                version="1.0">
+  <!--
+    By default, no user is included in the "manager-gui" role required
+    to operate the "/manager/html" web application.  If you wish to use this app,
+    you must define such a user - the username and password are arbitrary.
+
+    Built-in Tomcat manager roles:
+      - manager-gui    - allows access to the HTML GUI and the status pages
+      - manager-script - allows access to the HTTP API and the status pages
+      - manager-jmx    - allows access to the JMX proxy and the status pages
+      - manager-status - allows access to the status pages only
+      
+    The users below are wrapped in a comment and are therefore ignored. If you
+    wish to configure one or more of these users for use with the manager web
+    application, do not forget to remove the <!.. ..> that surrounds them. You
+    will also need to set the passwords to something appropriate.
+  -->
+  <!--
+    <user username="admin" password="<must-be-changed>" roles="manager-gui"/>
+    <user username="robot" password="<must-be-changed>" roles="manager-script"/>
+  -->
+  <!--
+    The sample user and role entries below are intended for use with the
+    examples web application. They are wrapped in a comment and thus are ignored
+    when reading this file. If you wish to configure these users for use with the
+    examples web application, do not forget to remove the <!.. ..> that surrounds
+    them. You will also need to set the passwords to something appropriate.
+  -->
+  <!--
+    <role rolename="tomcat"/>
+    <role rolename="role1"/>
+    <user username="tomcat" password="<must-be-changed>" roles="tomcat"/>
+    <user username="both" password="<must-be-changed>" roles="tomcat,role1"/>
+    <user username="role1" password="<must-be-changed>" roles="role1"/>
+  -->
+      <role rolename="manager-gui" />
+      <user username="manager" password="manager_password" roles="manager-gui" />
+
+      <role rolename="admin-gui" />
+      <user username="admin" password="admin_password" roles="manager-gui,admin-gui" />
+  </tomcat-users>    
+  ```
+  - `tomcat/templates/tomcat.service.j2`
+  ```
+        [Unit]
+      Description=Tomcat
+      After=network.target
+
+      [Service]
+      Type=forking
+
+      User=tomcat
+      Group=tomcat
+
+      Environment="JAVA_HOME={{ java_home_path }}" #Passing Dynamically from tomcat.yaml
+      Environment="JAVA_OPTS=-Djava.security.egd=file:///dev/urandom"
+      Environment="CATALINA_BASE=/opt/tomcat"
+      Environment="CATALINA_HOME=/opt/tomcat"
+      Environment="CATALINA_PID=/opt/tomcat/temp/tomcat.pid"
+      Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+
+      ExecStart=/opt/tomcat/bin/startup.sh
+      ExecStop=/opt/tomcat/bin/shutdown.sh
+
+      RestartSec=10
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+  ```
+  - `tomcat/inventory.ini`
+  ```ini
+  [redhat_nodes]
+  172.31.30.244
+  172.31.30.237
+
+  [ubuntu_nodes]
+  172.31.22.136
+  172.31.28.20
+
+  [all:vars]
+  ansible_user=ansible
+  ansible_ssh_private_key_file=~/.ssh/ansible_key
+  ```
+  - Choose inventory file of your choice either `.yaml` or `.ini`
+  ```yaml
+    all:
+      children:
+        redhat_nodes:
+          hosts:
+            - 172.31.30.244
+            - 172.31.30.237
+        ubuntu_nodes:
+          hosts:
+            - 172.31.22.136
+            - 172.31.28.20
+
+      vars:
+        ansible_user: ansible
+        ansible_ssh_private_key_file: ~/.ssh/ansible_key  
+
+  ```
+
+  - `tomcat/tomcat.yaml`
+  ```yaml
+  ---
+  - name: Installing Apache Tomcat server on Red Hat machine
+    hosts: "{{ chosen_servers | default('redhat_nodes,ubuntu_nodes') }}"
+    gather_facts: true
+    become: yes
+    tasks:
+      - name: Create tomcat group
+        ansible.builtin.group:
+          name: "{{ group_name }}"
+          state: present
+
+      - name: Create tomcat system user and home directory
+        ansible.builtin.user:
+          name: "{{ user_name }}"
+          system: true                            # -r (system account)
+          create_home: true                       # -m (create home directory)
+          group: "{{ group_name }}"               # -U (create group with same name)
+          home: "{{ tomcat_home_directory }}"     # -d /opt/tomcat
+          shell: "{{ tomcat_shell }}"             # -s /sbin/nologin
+          state: present
+
+      - name: Install dependencies on Red Hat-based systems
+        ansible.builtin.dnf:
+          name:
+            - "{{ java_package }}"
+            - wget
+          state: present
+          update_cache: true
+        when: ansible_os_family == "RedHat"
+
+      - name: Install dependencies on Debian/Ubuntu-based systems
+        ansible.builtin.apt:
+          name:
+            - "{{ java_package }}"
+            - wget
+          state: present
+          update_cache: true
+        when: ansible_os_family == "Debian"
+
+      - name: Download Tomcat archive to /tmp/
+        ansible.builtin.get_url:
+          url: "{{ tomcat_website_url }}"
+          dest: /tmp/apache-tomcat-10.1.55.tar.gz
+          mode: '0755'
+
+      - name: Extract Tomcat archive to /opt/tomcat
+        ansible.builtin.unarchive:
+          src: /tmp/apache-tomcat-10.1.55.tar.gz
+          dest: "{{ tomcat_home_directory }}"
+          remote_src: true
+          extra_opts: [--strip-components=1]
+          owner: "{{ user_name}}"
+          group: "{{ group_name }}"
+
+      # sudo chown -R tomcat:tomcat /opt/tomcat/
+      - name: Ensure correct ownership on entire tomcat directory
+        ansible.builtin.file:
+          path: "{{ tomcat_home_directory }}"
+          owner: "{{ user_name}}"
+          group: "{{ group_name }}"
+          recurse: true
+          state: directory
+
+      # sudo chmod -R u+x /opt/tomcat/bin
+      - name: Make tomcat bin scripts executable for the owner
+        ansible.builtin.file:
+          path: /opt/tomcat/bin
+          mode: 'u+x'
+          recurse: true
+          state: directory
+
+      - name: Deploy tomcat-users.xml configuration from template
+        ansible.builtin.template:
+          src: templates/tomcat-users.xml.j2
+          dest: /opt/tomcat/conf/tomcat-users.xml
+          owner: "{{ user_name}}"
+          group: "{{ group_name }}"
+          mode: '0755'
+        notify: Restart tomcat
+
+      - name: Deploy context.xml for Tomcat Manager application
+        ansible.builtin.template:
+          src: templates/manager_context.xml.j2
+          dest: /opt/tomcat/webapps/manager/META-INF/context.xml
+          owner: "{{ user_name}}"
+          group: "{{ group_name }}"
+          mode: '0640'
+        notify: Restart tomcat
+
+      - name: Deploy context.xml for Tomcat Host-Manager application
+        ansible.builtin.template:
+          src: templates/host_manager_context.xml.j2
+          dest: /opt/tomcat/webapps/host-manager/META-INF/context.xml
+          owner: "{{ user_name}}"
+          group: "{{ group_name }}"
+          mode: '0640'
+        notify: Restart tomcat
+
+      - name: Dynamically find Java home directory
+        ansible.builtin.shell:
+          cmd: 'readlink -f /usr/bin/java | sed "s:/bin/java::"'
+        register: java_path_output
+        changed_when: false
+
+      - name: Set java_home_path fact from command output
+        ansible.builtin.set_fact:
+          java_home_path: "{{ java_path_output.stdout | trim }}"
+
+      - name: Display discovered Java Home path
+        ansible.builtin.debug:
+          msg: "The discovered Java Home path is: {{ java_home_path }}"
+
+      - name: Deploy tomcat.service systemd unit file
+        ansible.builtin.template:
+          src: templates/tomcat.service.j2
+          dest: /etc/systemd/system/tomcat.service
+          owner: "{{ user_name}}"
+          group: "{{ group_name }}"
+          mode: '0644'
+        notify:
+          - Reload systemd daemon
+          - Restart tomcat
+
+      - name: Ensure Tomcat service is enabled and started
+        ansible.builtin.systemd:
+          name: "{{ user_name }}"
+          state: started
+          enabled: true
+        register: tomcat_status
+
+      - name: Print Tomcat active status summary
+        ansible.builtin.debug:
+          msg: "Tomcat state is currently: {{ tomcat_status.status.ActiveState | default('N/A') }}"
+
+    handlers:
+      - name: Reload systemd daemon
+        ansible.builtin.systemd:
+          daemon_reload: true
+
+      - name: Restart tomcat
+        ansible.builtin.systemd:
+          name: "{{ user_name }}"
+          state: restarted   
+  ```
+  - Command used to run ansible playbook to install Apache Tomcat on specifically for ubuntu worker nodes `ansible-playbook -i inventory.yaml tomcat.yaml -e "chosen_servers=ubuntu_nodes"`
+
+  - output looks like: (I used hosts: all)
+    ```
+    PLAY [Installing Apache Tomcat server on Red Hat machine] *********************************************************************
+
+    TASK [Gathering Facts] ********************************************************************************************************
+    ok: [172.31.30.244]
+    ok: [172.31.30.237]
+    ok: [172.31.22.136]
+    ok: [172.31.28.20]
+
+    TASK [Create tomcat group] ****************************************************************************************************
+    changed: [172.31.22.136]
+    ok: [172.31.30.244]
+    changed: [172.31.30.237]
+    changed: [172.31.28.20]
+
+    TASK [Create tomcat system user and home directory] ***************************************************************************
+    changed: [172.31.22.136]
+    ok: [172.31.30.244]
+    changed: [172.31.30.237]
+    changed: [172.31.28.20]
+
+    TASK [Install dependencies on Red Hat-based systems] **************************************************************************
+    skipping: [172.31.22.136]
+    skipping: [172.31.28.20]
+    ok: [172.31.30.244]
+    changed: [172.31.30.237]
+
+    TASK [Install dependencies on Debian/Ubuntu-based systems] ********************************************************************
+    skipping: [172.31.30.244]
+    skipping: [172.31.30.237]
+    changed: [172.31.22.136]
+    changed: [172.31.28.20]
+
+    TASK [Download Tomcat archive to /tmp/] ***************************************************************************************
+    ok: [172.31.30.244]
+    changed: [172.31.22.136]
+    changed: [172.31.30.237]
+    changed: [172.31.28.20]
+
+    TASK [Extract Tomcat archive to /opt/tomcat] **********************************************************************************
+    changed: [172.31.22.136]
+    changed: [172.31.28.20]
+    changed: [172.31.30.237]
+    changed: [172.31.30.244]
+
+    TASK [Ensure correct ownership on entire tomcat directory] ********************************************************************
+    ok: [172.31.22.136]
+    ok: [172.31.28.20]
+    ok: [172.31.30.244]
+    ok: [172.31.30.237]
+
+    TASK [Make tomcat bin scripts executable for the owner] ***********************************************************************
+    changed: [172.31.22.136]
+    changed: [172.31.30.244]
+    changed: [172.31.28.20]
+    changed: [172.31.30.237]
+
+    TASK [Deploy tomcat-users.xml configuration from template] ********************************************************************
+    changed: [172.31.22.136]
+    changed: [172.31.30.244]
+    changed: [172.31.30.237]
+    changed: [172.31.28.20]
+
+    TASK [Deploy context.xml for Tomcat Manager application] **********************************************************************
+    changed: [172.31.22.136]
+    changed: [172.31.30.237]
+    changed: [172.31.30.244]
+    changed: [172.31.28.20]
+
+    TASK [Deploy context.xml for Tomcat Host-Manager application] *****************************************************************
+    changed: [172.31.22.136]
+    changed: [172.31.30.237]
+    changed: [172.31.30.244]
+    changed: [172.31.28.20]
+
+    TASK [Dynamically find Java home directory] ***********************************************************************************
+    ok: [172.31.22.136]
+    ok: [172.31.30.244]
+    ok: [172.31.30.237]
+    ok: [172.31.28.20]
+
+    TASK [Set java_home_path fact from command output] ****************************************************************************
+    ok: [172.31.30.244]
+    ok: [172.31.30.237]
+    ok: [172.31.22.136]
+    ok: [172.31.28.20]
+
+    TASK [Display discovered Java Home path] **************************************************************************************
+    ok: [172.31.30.244] => {
+        "msg": "The discovered Java Home path is: /usr/lib/jvm/java-21-openjdk"
+    }
+    ok: [172.31.30.237] => {
+        "msg": "The discovered Java Home path is: /usr/lib/jvm/java-21-openjdk"
+    }
+    ok: [172.31.22.136] => {
+        "msg": "The discovered Java Home path is: /usr/lib/jvm/java-21-openjdk-amd64"
+    }
+    ok: [172.31.28.20] => {
+        "msg": "The discovered Java Home path is: /usr/lib/jvm/java-21-openjdk-amd64"
+    }
+
+    TASK [Deploy tomcat.service systemd unit file] ********************************************************************************
+    changed: [172.31.22.136]
+    ok: [172.31.30.244]
+    changed: [172.31.28.20]
+    changed: [172.31.30.237]
+
+    TASK [Ensure Tomcat service is enabled and started] ***************************************************************************
+    ok: [172.31.30.244]
+    changed: [172.31.22.136]
+    changed: [172.31.30.237]
+    changed: [172.31.28.20]
+
+    TASK [Print Tomcat active status summary] *************************************************************************************
+    ok: [172.31.30.244] => {
+        "msg": "Tomcat state is currently: active"
+    }
+    ok: [172.31.30.237] => {
+        "msg": "Tomcat state is currently: inactive"
+    }
+    ok: [172.31.22.136] => {
+        "msg": "Tomcat state is currently: inactive"
+    }
+    ok: [172.31.28.20] => {
+        "msg": "Tomcat state is currently: inactive"
+    }
+
+    RUNNING HANDLER [Reload systemd daemon] ***************************************************************************************
+    ok: [172.31.22.136]
+    ok: [172.31.28.20]
+    ok: [172.31.30.237]
+
+    RUNNING HANDLER [Restart tomcat] **********************************************************************************************
+    changed: [172.31.30.244]
+    changed: [172.31.22.136]
+    changed: [172.31.30.237]
+    changed: [172.31.28.20]
+
+    PLAY RECAP ********************************************************************************************************************
+    172.31.22.136              : ok=19   changed=12   unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+    172.31.28.20               : ok=19   changed=12   unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+    172.31.30.237              : ok=19   changed=12   unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+    172.31.30.244              : ok=18   changed=6    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0  
+    ```
