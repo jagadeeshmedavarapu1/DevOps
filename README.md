@@ -354,5 +354,52 @@
   ```
 
 ##### Manual steps in setting up a website with Nginx (Ubuntu/Redhat)
-  * 
+  * **Instance Launching and Networking**
+    - Create an Ubuntu and a RedHat instance named `ubuntu-nginx-man-1` and `redhat-nginx-man-1` (or use names of your choice). Assign an existing PEM file if you have one; otherwise, create a new one.
 
+    - Enable **HTTP(80)**, **HTTPS(443)** for in-bound traffic under firewall (security groups) settings and launch instance.
+        * *Note*: Port 80 is the global standard for unencrypted web traffic (HTTP). Port 443 handles encrypted web traffic (HTTPS). If these ports are closed in your cloud firewall, users cannot access your website even if Nginx is running.
+  * **Secure SSH Remote Access**:
+    - Now login into your remote instance using local terminal and private key 
+        * Ubuntu: `ssh -i /Users/jagadeesh/Downloads/ansible-keypair.pem ubuntu@<PUBLIC_IP_ADDRESS>`
+        * RedHat: `ssh -i /Users/jagadeesh/Downloads/ansible-keypair.pem ec2-user@<PUBLIC_IP_ADDRESS>`
+  * **System Update and User Management**:
+    - Update your system packages before going to next steps
+        * Ubuntu: `sudo apt update`
+        * RedHat: `sudo dnf update -y`
+  * **Nginx Web Server Installation**:
+    - Install the web server engine and verify that the background service is running.
+        * Ubuntu:
+        ```
+        sudo apt install nginx -y
+        sudo systemctl status nginx
+        ```
+        * RedHat:
+        ```
+        sudo dnf install nginx -y
+        sudo systemctl status nginx
+        ```
+    - *Note*: **Nginx** is a high-performance HTTP web server. **systemctl** is the controller utility for systemd, which manages system services (daemons) running in the background of Linux.
+  * **Dependency & Utility Installation**:
+    - Install the package tools required to download and extract web source files.
+        * Ubuntu: `sudo apt install unzip wget -y`
+        * RedHat: `sudo dnf install unzip wget -y`
+  * **Website Artifact Retrieval**:
+    - Navigate to a temporary workspace (`/tmp/`) to download and extract the template files.
+        ```
+        cd /tmp/
+        wget https://templatemo.com/tm-zip-files-2020/templatemo_589_lugx_gaming.zip
+        unzip templatemo_589_lugx_gaming.zip
+        ```
+    - *Note*: Files stored here (`/tmp`) are temporary and usually cleared automatically when the system reboots.
+  * **Web Root Deployment**:
+    - Move your unzipped static files into Nginx’s default public-facing directory.
+        ```
+        cd templatemo_589_lugx_gaming/
+        sudo cp --recursive . /var/www/html/
+        ```
+    - *Note*: **Web Root (/var/www/html)**
+        * `/var/www/html` is the default folder where Nginx looks for website files (like `index.html`)
+        * `--recursive` (or `-r`) flag tells Linux to copy everything inside the folder, including all nested subdirectories and assets.
+  * Now open your browser and check whether you are able to reach the Nginx homepage. `http://<your-server-public-ip>`
+    - *Note*: you can use `curl ifconfig.me` to find your public IP address without navigating to cloud ec2 console.
