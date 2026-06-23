@@ -1,8 +1,8 @@
-# DevOps standard tools concepts and implementations
+# **DevOps Configuration Management tool - Ansible**
 
-## Configuration Management
+## **Configuration Management**
 
-* *Configuration Management (CM)* is an IT process that ensures all software and hardware systems maintain a consistent desired state. It automates the setup, maintenance, and tracking of servers and infrastructure, eliminating manual errors and configuration drifts.
+* **Configuration Management (CM)** is an IT process that ensures all software and hardware systems maintain a consistent desired state. It automates the setup, maintenance, and tracking of servers and infrastructure, eliminating manual errors and configuration drifts.
 
 * To be more detailed, an egineering process for establishing and maintaining consistency of product's performance, functional, and physical attributes with its requirements design and operational information throughtout its life.
 
@@ -198,6 +198,16 @@
     * This creates:
         - `~/.ssh/ansible_key` -> Private Key (Keep this secure on the Ansible Server)
         - `~/.ssh/ansible_key.pub` -> Public Key (copy this to worker nodes)
+  * **How Ansible uses SSH**
+    * Ansible expects Python on nodes; it operates primarily over SSH and Python.
+    * At runtime, Ansible reads the IP addresses and credential details from the inventory file, which configures the underlying SSH connection options.
+    * Ansible initiates an internal SSH connection to the target system.
+    * It generates a temporary Python script containing your task configurations and copies it over to the managed node.
+    * The Python interpreter on the remote node executes this temporary script.
+    * The script execution output is returned to the control machine via the SSH connection.
+    * Ansible automatically cleans up the temporary Python script and all related runtime files from the node.
+    * As users, we interact with Ansible by writing structured playbooks or executing ad-hoc commands to orchestrate these tasks.
+    * Industry standards recommend configuring a dedicated user across all target nodes using key-based SSH authentication, typically provisioned with sudo or privilege escalation rights.
 
 ###### **Copy the Public Key to Worker Nodes from Ubuntu Ansible Server**:
   * Copy the public key to worker node 1 & 2
@@ -357,6 +367,25 @@
   ansible_ssh_private_key_file=~/.ssh/ansible_key
   ```
 
+#### Package Managers
+  * **Methods to Install Software in Linux**
+    - Source Code Compilation: Building binaries manually using source `code + make`.
+    - Low-Level Packages: Installing offline packages directly using system utilities.
+      * Debian/Ubuntu: `dpkg -i <package>.deb`
+      * Red Hat/CentOS: `rpm -ivh <package>.rpm`
+    - **Package Managers**: Automated tools that resolve and download dependencies from remote repositories.
+      * Debian/Ubuntu: `apt`
+      * Red Hat/CentOS: `dnf` (`yum`)
+      * Universal: `snap` (containerized software packages)
+  * **Advanced Packaging Tool (APT)**
+    - The default package manager used across all Debian and Ubuntu-based Linux distributions.
+    - Downloads the latest metadata package definitions from remote repositories via `apt update`.
+    - **Software Installation**: Resolves underlying dependencies and installs software using `apt install <package-name>`.
+  * **Dandified YUM (DNF)**
+    - The default package manager used across Red Hat Enterprise Linux (RHEL), Fedora, and Rocky Linux systems.
+    - Refreshes metadata automatically during commands, or explicitly via `dnf check-update`
+    - **Software Installation**: Resolves underlying dependencies and installs software using `dnf install <package-name>`.
+
 ##### **Manual steps in setting up a website with Nginx (Ubuntu/Redhat)**
   * **Instance Launching and Networking**
     - Create an Ubuntu and a RedHat instance named `ubuntu-nginx-man-1` and `redhat-nginx-man-1` (or use names of your choice). Assign an existing PEM file if you have one; otherwise, create a new one.
@@ -407,6 +436,96 @@
         * `--recursive` (or `-r`) flag tells Linux to copy everything inside the folder, including all nested subdirectories and assets.
   * Now open your browser and check whether you are able to reach the Nginx homepage. `http://<your-server-public-ip>`
     - *Note*: you can use `curl ifconfig.me` to find your public IP address without navigating to cloud ec2 console.
+
+#### **Ansible Modules and Their Types**
+  * [Ansible Modules official Document](https://docs.ansible.com/projects/ansible/2.9/modules/list_of_all_modules.html)
+  * **System & Package Management**:
+    - `ansible.builtin.package`: Generic manager that automatically calls apt or dnf based on the target OS.
+    - `ansible.builtin.apt`: Manages packages on Debian/Ubuntu systems.
+    - `ansible.builtin.dnf`: Manages packages on Red Hat/RHEL systems.
+    - `ansible.builtin.service / systemd`: Starts, stops, restarts, and enables background system services.
+  * **Files & Templating**
+    - `ansible.builtin.copy`: Copies files from the control machine directly to target nodes.
+    - `ansible.builtin.template`: Processes Jinja2 templates (.j2) dynamically before moving them to nodes.
+    - `ansible.builtin.file`: Sets permissions, ownership, symlinks, and creates directories.
+    - `ansible.builtin.lineinfile`: Searches for, adds, updates, or deletes a specific single line inside a text file.
+  * **Users & Permissions**
+    - `ansible.builtin.user`: Creates, updates, or removes system user accounts.
+    - `ansible.builtin.group`: Manages system group access.
+  * **Execution & Commands**
+    - `ansible.builtin.command`: Runs safe, raw commands on nodes (does not support shell piping or variables)
+    - `ansible.builtin.shell`: Executes free-form commands through the node's shell (supports |, <, >, and variables).
+  * **Networking & Utilities**
+    - `ansible.builtin.get_url`: Downloads files over HTTP, HTTPS, or FTP directly to target nodes.
+    - `ansible.builtin.unarchive`: Unpacks compressed files (like .tar.gz or .zip) on target nodes.
+    - `ansible.builtin.setup`: Automatically collects detailed hardware and software facts from nodes.
+
+#### **YAML**
+  * **Ansible Execution Modes**
+    - Ad-hoc Commands: Quick, single-task terminal commands targeting a specific module.
+    - Playbooks: Structured, declarative configuration files written in YAML format.
+  * **YAML Core Principles**
+    - Structure: Uses key-value pairs separated by a colon and a space (key: value)
+    - Formatting: Relies strictly on Python-inspired indentation (spaces, no tabs).
+    - Files: Uses .yml or .yaml extensions and begins with a document start marker (---).
+  * **YAML Data Types & Syntax Examples**
+    - [Learn YAML in Y minutes](https://learnxinyminutes.com/yaml/)
+    - **Simple Types**
+      * Text: Can be unquoted, single-quoted, or double-quoted.
+        ```yaml
+        name: Quality Thought Technologies
+        ```
+      * Number: Written as integers or floats without quotes.
+        ```yaml
+        age: 13
+        ```
+      * Boolean: Evaluated via lowercase or capitalized true/false values.
+        ```yaml
+        offline: true
+        ```
+    - **Complex Types**
+      * List / Array: Ordered collections written inline or as hyphenated bullet points.
+        ```yaml
+        courses: [DevOps, Python]
+        # OR
+        courses:
+          - DevOps
+          - Python
+        ```
+      * Map / Object: Nested dictionary key-value mappings written inline or indented.
+        ```yaml
+        address: { flatno: 601, city: hyderabad }
+        # OR
+        address:
+          flatno: 601
+          city: hyderabad
+        ```
+
+#### **Ansible Playbooks**
+  * A declarative configuration file written in YAML that outlines the exact state you want your target servers to be in.
+  * A playbook is a collection of one or more plays.
+  * **Structure of a Play**
+    - `hosts`: Specifies the target nodes or inventory groups where the tasks will execute.
+    - `become`: Enables privilege escalation (e.g., executing commands via sudo). It can be applied globally to a play or specifically to an individual task.
+    - `tasks`: A sequential list of actions to execute. Each task invokes exactly one Ansible module.
+    - `roles`: Bundled, reusable structures of tasks, variables, and handlers organized into directories.
+    - `handlers`: Special tasks triggered by other tasks using notify, typically used for service restarts only when changes occur.
+  * **Execution & Testing**
+    - Dry Run Syntax: Evaluates the playbook and shows what would change without modifying the target systems.
+      ```bash
+      ansible-playbook --check -i inventory.ini playbook.yaml
+      ```
+    - Syntax Check: Validates the YAML and Ansible layout structure before execution.
+      ```
+      ansible-playbook --syntax-check -i inventory.ini playbook.yaml
+      ```
+  * **Task Execution Status Codes**
+    - Ansible returns a real-time status summary at the completion of every single task:
+      * `ok`: The system is already in the desired state. No changes were made (Idempotency).
+      * `changed`: Ansible modified the remote system to match your declared task parameters.
+      * `failed`: The task encountered an error and halted execution on that host.
+      * `skipped`: The task was bypassed because a conditional evaluation (when statement) was not met.
+
 
 ##### **Automating the website deployment using ansible-playbook (redhat ansible server) and manipulate worker nodes (redhat:httpd & ubuntu:apache2)**
   * [Follow the steps provided under setting up a mixed ansible environment](#setting-up-a-mixed-ansible-environment) upto copying ssh public key to the worker nodes.
@@ -509,8 +628,138 @@
             - `-R`: Means Recursive. It fixes the main folder and every single subfolder and file inside it (like your CSS, JavaScript, and images).
             - `changed_when`: false: This is just for Ansible. Because restorecon is a raw Linux command, Ansible will always report it as a "Yellow / Changed" task. Adding this line forces Ansible to keep it "Green / OK" so your playbooks look clean
 
-#### **Variables and Types of variables**
+#### **Ansible Inventories**
+  * A configuration source containing a list of target hosts, IP addresses, and connection settings that Ansible manages.
+  * **Default Location**: /etc/ansible/hosts (used if no custom inventory file is passed via the -i flag).
+  * **Implicit Group**: Ansible automatically catches all defined hosts under a built-in parent group named all.
 
+##### **Inventory Types**
+  * **Static Inventories**: Plain text files with hardcoded server addresses (written in either INI or YAML format).
+  * **Dynamic Inventories**: Executable scripts or cloud plugins (AWS, GCP, Azure) that fetch live server lists automatically and output them in a standard JSON format.
+  * **INI Format vs YAML Format Syntax**
+    * Basic Structure (Ungrouped)
+      - INI Format (`inventory.ini`)
+        ```ini
+        10.100.0.11
+        10.100.0.12
+        ```
+      - YAML Format (`inventory.yaml`)
+        ```yaml
+        ---
+        all:
+          hosts:
+            10.100.0.11:
+            10.100.0.12:
+        ```
+    * Grouped Layout: To define distinct logical boundaries for applications (like web and database layers), group names are configured as children in YAML or bracketed headers in INI.
+      - INI Format (`inventory.ini`)
+        ```ini
+        [webservers]
+        10.100.0.11
+        10.100.0.12
+
+        [dbservers]
+        10.100.0.17
+        10.100.0.18
+        ```
+      - YAML Format (`inventory.yaml`)
+        ```yaml
+        ---
+        all:
+          children:
+            webservers:
+              hosts:
+                10.100.0.11:
+                10.100.0.12:
+            dbservers:
+              hosts:
+                10.100.0.17:
+                10.100.0.18:
+        ```
+    * Range Patterns
+      - INI Format 
+        ```ini
+        [webservers]
+        www[01:06].example.com
+        ```
+      - YAML Format
+        ```yaml
+        webservers:
+          hosts:
+            www[01:06].example.com
+        ```
+#### **Failing and Bailing Out of Playbooks**
+  * `ansible.builtin.fail`: Explicitly stops playbook execution on the current host and marks the task as failed. It is combined with when conditionals to halt operations if safety requirements or pre-requisites are not met.
+  * `ansible.builtin.meta`: Used to bail out or end execution gracefully without marking the run as a failure.
+    * `ansible.builtin.meta: end_play`: Bails out of the current play 
+    for the host without throwing an error.
+    * `ansible.builtin.meta: end_host`: Bails out of the entire playbook completely for the host without throwing an error.
+  * `any_errors_fatal`: A play-level keyword. Setting `any_errors_fatal: true` forces Ansible to instantly stop the entire playbook run across all hosts if even a single server fails a task.
+  * **Examples**:
+    - Failing Hard:
+      ```yaml
+      - name: Verify OS is supported
+        ansible.builtin.fail:
+          msg: "This playbook only supports RedHat and Debian families!"
+        when: ansible_os_family not in ['RedHat', 'Debian']
+      ```
+    - Graceful Bailout:
+      ```yaml
+      - name: Skip remaining tasks if software is already configured
+        ansible.builtin.meta: end_host
+        when: software_already_installed | default(false)
+      ```
+
+#### **Variables and Types of variables**
+  * [Refer here for official documentation](https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_variables.html)
+  * **Inventory Variables (`group_vars` and `host_vars`)**
+    - These are used to separate environment configurations (like Dev, QA, or Prod) directly within your inventory structure.
+      * Group Variables (`group_vars/`): Applied to an entire collection of servers.
+      ```yaml
+      # group_vars/ubuntu_nodes.yml
+      java_package: "openjdk-21-jdk"
+      ```
+      * Host Variables (host_vars/): Applied strictly to a single, specific server machine.
+      ```yaml
+      # host_vars/private_ip_1.yml
+      tomcat_port: 8081 # Unique port just for this node
+      ```
+  * **Playbook Variables (`vars` and `vars_files`)**
+    - Variables declared directly inside your automation play files.
+      * Play Variables (`vars`): Written at the top of a play block.
+      ```yaml
+      - name: Install Tomcat
+        hosts: all
+        vars:
+          tomcat_user: "tomcat"
+      ```
+      * Variable Files (`vars_files`): Loaded dynamically from external files, often used to separate configurations by OS.
+      ```yaml
+      vars_files:
+        - "vars/{{ ansible_os_family }}.yml"
+      ```
+  * **Role Variables (`defaults` vs `vars`)**
+    - When writing reusable [Ansible Roles](https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_reuse_roles.html), variables are split by how easily they should be overridden.
+      * Role Defaults (`defaults/main.yml`): The lowest priority variables. They act as safe fallbacks that users can easily overwrite.
+      * Role Vars (`vars/main.yml`): High priority variables critical to the role's internal logic that should rarely be changed.
+  * **System Facts / Gathered Variables**
+    - These are discovered automatically by Ansible from the target node at the start of a playbook run via the `setup` module.
+      * Used to make choices based on hardware or OS details.
+      * **Examples**: `ansible_os_family` (e.g., RedHat, Debian), `ansible_memtotal_mb`, or `ansible_ip_addresses`.
+  * **Extra Variables (`extra_vars`)**
+    - Variables passed directly on the command line at runtime. They hold the absolute highest priority and override all other definitions.
+    ```bash
+    ansible-playbook tomcat.yaml -e "chosen_servers=ubuntu_nodes tomcat_port=9090"
+    ```
+  * **Task Variables**
+    - Variables defined directly inside a specific task block. They are only visible to that single task.
+    ```yaml
+    - name: Download file
+      ansible.builtin.get_url:
+        url: "{{ download_url }}"
+      vars:
+        download_url: "https://example.com"
+    ```
   * **Registered Variables**
     - One of the most powerful features in Ansible is the ability to capture the output of a task and use it later in the playbook. The register keyword stores the entire result of a task into a variable, giving you access to return codes, stdout, stderr, changed status, and module-specific data. This is essential for building playbooks that make decisions based on the actual state of the system rather than assumptions.
     - **Example**:
@@ -528,20 +777,24 @@
           - *Loop*: Ansible reads your inventory.yaml and sees the two IPs (10.0.0.5 and 10.0.0.6). It automatically loops through them.
           - *Isolation*: When running the check disc usage task, Ansible logs into the first IP, runs df -h, and saves the result only for that IP. Then it immediately logs into the second IP, runs df -h, and saves the result only for that second IP.
     - Think of your playbook as a reusable template. You write the steps just once, and Ansible handles the hard work of repeating those steps for every single IP address it finds in your inventory file.
-  * **Variable Precedence (Low → High)**
-    | Priority | Source |
-    | :--- | :--- |
-    | 1 (lowest) | Role defaults (defaults/main.yml) |
-    | 2 | Inventory group vars |
-    | 2 | Inventory host vars |
-    | 4 | Playbook group_vars/ |
-    | 5 | Playbook host_vars/ |
-    | 6 | Playbook vars: block |
-    | 7 | vars_files: |
-    | 8 | vars_prompt: |
-    | 9 | Task vars: |
-    | 10 | set_fact / registered vars |
-    | 11 (highest) | Extra vars -e |
+
+  * **Ansible Variable Precedence Hierarchy**
+
+    * Ansible resolves conflicting variable names using a strict hierarchy. If the same variable is defined in multiple places, the source with the **higher priority number** overrides the lower ones.
+
+    | Priority | Source / Location | Scope & Common Usage |
+    | :---: | :--- | :--- |
+    | **1 <br> (Lowest)** | `defaults/main.yml` | Base fallback values inside an Ansible role. Easily overridden. |
+    | **2** | Inventory file `[group:vars]` | Variables defined inside a static INI/YAML inventory file for a group. |
+    | **3** | Inventory file host vars | Variables defined next to a specific host IP/name inside the inventory file. |
+    | **4** | Playbook `group_vars/` | Variables stored in external YAML files matching group names next to the playbook. |
+    | **5** | Playbook `host_vars/` | Variables stored in external YAML files matching specific hostnames next to the playbook. |
+    | **6** | Playbook `vars:` block | Explicitly declared under the main play header. |
+    | **7** | Playbook `vars_files:` block | Loaded dynamically from external files listed at the play level. |
+    | **8** | Playbook `vars_prompt:` block | Interactive inputs requested from the terminal user before the play starts. |
+    | **9** | Task-level `vars:` block | Scoped tightly inside a single, specific task. |
+    | **10** | `set_fact` / `register` vars | Created dynamically during runtime by a task execution. |
+    | **11 <br> (Highest)** | Extra vars (`-e`) | Passed directly on the command line at runtime. Overrides everything. |
 
 
 ##### **Configuring apache webserver on redhat (httpd) and ubunut (apache2) in parllel and hosting a gaming website dynamically.**
@@ -667,10 +920,31 @@
   * SELinux (Security-Enhanced Linux) is a built-in Linux security system that controls process permissions. [Refer **Security-Enhanced Linux** if you face 403 Errors for RedHat Machine](https://docs.redhat.com/en/documentation/Red_Hat_Enterprise_Linux/6/html-single/security-enhanced_linux/index)
 
 #### Ansible Facts
-
-
-
-
+  * Ansible facts are system properties and metadata collected automatically from target nodes before tasks execute.
+    - Handled by the `ansible.builtin.setup` module when `gather_facts: true` is set.
+    - Used to dynamically adjust configurations based on OS types, IP addresses, memory, or storage layouts.
+  * **Examples**:
+    * Target System's IP Address (`ansible_default_ipv4`): Perfect for dynamically assigning listen addresses in configuration files.
+    ```yaml
+    - name: Output the default private IP address
+      ansible.builtin.debug:
+        msg: "The node primary IP address is {{ ansible_default_ipv4.address }}"
+    ```
+    * Available Memory (`ansible_memtotal_mb`): Useful for dynamically calculating application configurations like Java heap sizing.
+    ```yaml
+    - name: Set dynamic Java heap size based on total RAM
+      ansible.builtin.set_fact:
+        jvm_heap_size: "{{ (ansible_memtotal_mb * 0.5) | int }}m"
+    ```
+    * CPU Core Count (`ansible_processor_vcpus`): Used to scale worker thread counts to match infrastructure capacity.
+    ```yaml
+    - name: Display total CPU count
+      ansible.builtin.debug:
+        msg: "This server has {{ ansible_processor_vcpus }} virtual CPUs"
+    ```
+#### **Ansible Conditionals (when)**
+  * Conditionals control whether a specific task executes or gets skipped based on evaluated criteria.
+    - `Rule`: Do not use Jinja2 brackets {{ }} inside a when statement; variables are evaluated implicitly.
 ##### **Manual steps to install Apache Tomcat 10 with openjdk 21 on Ubuntu instance**
   * Create a ubuntu instance naming `ubuntu-tomcat-manual` (or choose name of your choice) and attach existing .pem key or create one if you dont have one and then enable `http(80)` and `https(443)` protocals. Later after launching instance try to edit inbound security rule enable `port 8080` since tomcat runs on port 8080. 
 
@@ -1570,3 +1844,5 @@
     172.31.30.237              : ok=19   changed=12   unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
     172.31.30.244              : ok=18   changed=6    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0  
     ```
+
+#### Ansible Roles 
