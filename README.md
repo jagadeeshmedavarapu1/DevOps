@@ -1846,5 +1846,84 @@
     ```
 
 #### Ansible Roles 
-  * Command used to create a roles directory `ansible-galaxy role init <role_name>`
-  - Now install tree to see the directory level tree structure i.e `sudo apt install tree` (ubuntu), `sudo dnf install tree` for redhat. ![preview](Images/tree1.png)
+  * Creating the Role: Use the command `ansible-galaxy role init <role_name>` to automatically generate the standard Ansible directory structure.
+  * Installing the Tree Utility: To view the generated folder structure as a visual tree, install the utility tool using sudo apt install tree on Ubuntu, or sudo dnf install tree on Red Hat. ![preview](Images/tree1.png)
+
+  * Now make changes according to the folders (**Path: Ansible(repository)/ansible-roles/tomcat10/** <-- where you can see all these directories)
+    - When you generate an Ansible Role using ansible-galaxy, it creates a standardized file layout. Each directory contains a main.yml file designed for a specific purpose.
+      * `defaults` Directory: The `defaults/main.yml` file is used to store centralised, low-priority variables. These are the default configuration values for your role that can easily be overridden by a user if needed.
+        * **Use clear variable names**: Prefix variables if necessary to avoid conflict with other roles.
+        * **Keep paths clean**: Avoid trailing slashes on directory variables to make joining paths predictable.
+        ```yml
+          #defaults file for tomcat10
+          tomcat_website_url: https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.55/bin/apache-tomcat-10.1.55.tar.gz
+          group_name: tomcat
+          user_name: tomcat 
+          tomcat_home_directory: /opt/tomcat
+          tomcat_shell: "{{ '/sbin/nologin' if ansible_os_family == 'RedHat' else '/bin/false' }}" 
+          java_package: "{{ 'java-21-openjdk-devel' if ansible_os_family == 'RedHat' else 'openjdk-21-jdk' }}" 
+          #java_home_path: /usr/lib/jvm/java-21-openjdk (passing dynamically from tomcat.yaml)
+        ```
+      * `handlers` Directory: Handlers are specialized tasks that only run when triggered by a notify statement from another task (e.g., restarting Tomcat only when a configuration file changes). They live inside `handlers/main.yml`.
+        * **Syntax**: Because ansible-galaxy automatically wraps this directory's context, do not write the root key `handlers:` at the top of the file. Start your file directly with a list of tasks using `- name:`
+        * **Correct Syntax** (`handlers/main.yml`):
+        ```yml
+          ---
+          # handlers file for tomcat10
+          - name: Reload and Restart systemd daemon
+            ansible.builtin.systemd:
+              name: "{{ user_name }}"
+              state: restarted   
+              enabled: yes      
+              daemon_reload: true
+        ```
+      * `meta` Directory: The `meta/main.yml` file is used to store metadata about your role and to define its dependencies. This file is essential if you plan to share your role on Ansible Galaxy, but it is also highly useful for team collaboration and project tracking.
+      * Inside `meta/main.yml`, you have two primary, top-level sections: galaxy_info and dependencies.
+        * `galaxy_info` (Role Metadata): `min_ansible_version`, always specify this to prevent your playbook from crashing midway if someone runs it on an outdated, unsupported version of Ansible.
+        * `galaxy_tags`: These act as keywords (like labels or search tags). They help people find your role on Ansible Galaxy and describe what platforms or technologies your role automates (e.g., web, tomcat, java).
+        * `dependencies` (Role Requirements): The dependencies section allows you to list other Ansible roles that must run and succeed before your current role can execute. For example, since Tomcat requires Java to run, you can enforce that a Java role executes first.
+        * **Critical Syntax & Behaviour Rules**:
+          * One role per line: You must list each dependency as a standalone list element (- role: role_name) on its own line.
+          * Execution Order: Ansible will automatically pause your tomcat role, download/execute the java role completely, and then return to finish your tomcat role.
+          * Empty by Default: If your role does not rely on any external roles, leave it as an empty list (dependencies: [])
+      * `tasks` Directory: The `tasks/main.yml` file is the core engine of your role. It contains the actual sequential list of steps (plays) required to execute your automation—in this case, installing and configuring the Apache Tomcat server for Linux nodes.
+        * **Syntax**: Because ansible-galaxy automatically wraps this directory's context, do not write the root key tasks: at the top of the file. Your file must start directly with a list of tasks using the dash-name (`- name:`) syntax.
+      * `templates` Directory: This folder holds Jinja2 templates (`.j2` files) that Ansible processes and deploys dynamically to your managed nodes using the `ansible.builtin.template` module in your tasks.
+        * **Templates Required for Tomcat**: Place the following four files directly inside your `templates/` folder
+          * `tomcat.service.j2` – The systemd service file template to manage the Tomcat process background lifecycle.
+          * `tomcat-users.xml.j2` – The user configuration template to manage GUI administrative roles and passwords.
+          * `manager_context.xml.j2` – The context file template to configure access restrictions for the Web Application Manager application.
+          * `host_manager_context.xml.j2` – The context file template to configure access restrictions for the Host Manager application.
+      * `tests` Directory: The `tests/` folder contains a self-contained environment to validate and test your role locally or within a CI/CD pipeline. It contains two main components: inventory and test.yml.
+        * To maintain DevOps best practices, do not modify the `test.yml` file itself. Instead, keep it as a clean reference template and manage your targets using the inventory file or external environment playbooks.
+        * **Configuring the tests/inventory File**: To ensure your Ansible control node connects seamlessly to your worker nodes without throwing connection or host-key checking errors, you should define your target nodes along with their explicit SSH credentials directly inside the inventory file
+        ```ini
+          [redhat_nodes]
+          172.31.30.244
+          172.31.30.237
+
+          [ubuntu_nodes]
+          172.31.22.136
+          172.31.28.20
+
+          [all:vars]
+          ansible_user=ansible
+          ansible_ssh_private_key_file=~/.ssh/ansible_key
+        ```
+      * `vars` Directory: Unlike the variables you put in `defaults/main.yml` (which are low-priority and meant to be changed by the user), variables placed in `vars/main.yml` have a very high priority in Ansible. You should use this folder for strict, internal role configurations that must not be modified at the command line or by external playbooks.
+  
+  * Create a new file named deploy_tomcat.yml to define your main play and call your role. This playbook must be placed in the parent directory alongside your tomcat10 role folder (ansible-roles/deploy_tomcat.yml), not inside it.
+    * The deploy_tomcat.yml looks like:
+    ```yml
+      ---
+      # The playbook.yml file should be located in the root directory alongside the tomcat10 role definition.
+      - name: Deploy Apache Tomcat Server on Linux (Redhat/Ubuntu) Nodes
+        hosts: "{{ chosen_servers | default('redhat_nodes,ubuntu_nodes') }}"
+        gather_facts: true
+        become: yes
+
+        roles:
+          - role: tomcat10
+    ```
+      
+      
