@@ -1,2 +1,127 @@
 ---
 # tasks file for tomcat10
+- name: Create tomcat group
+  ansible.builtin.group:
+    name: "{{ group_name }}"
+    state: present
+
+- name: Create tomcat system user and home directory
+  ansible.builtin.user:
+    name: "{{ user_name }}"
+    system: true                            # -r (system account)
+    create_home: true                       # -m (create home directory)
+    group: "{{ group_name }}"               # -U (create group with same name)
+    home: "{{ tomcat_home_directory }}"     # -d /opt/tomcat
+    shell: "{{ tomcat_shell }}"             # -s /sbin/nologin
+    state: present
+
+- name: Install dependencies on Red Hat-based systems
+  ansible.builtin.dnf:
+    name:
+      - "{{ java_package }}"
+      - wget
+    state: present
+    update_cache: true
+  when: ansible_os_family == "RedHat"
+
+- name: Install dependencies on Debian/Ubuntu-based systems
+  ansible.builtin.apt:
+    name:
+      - "{{ java_package }}"
+      - wget
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Download Tomcat archive to /tmp/
+  ansible.builtin.get_url:
+    url: "{{ tomcat_website_url }}"
+    dest: /tmp/apache-tomcat-10.1.55.tar.gz
+    mode: '0755'
+
+- name: Extract Tomcat archive to /opt/tomcat
+  ansible.builtin.unarchive:
+    src: /tmp/apache-tomcat-10.1.55.tar.gz
+    dest: "{{ tomcat_home_directory }}"
+    remote_src: true
+    extra_opts: [--strip-components=1]
+    owner: "{{ user_name}}"
+    group: "{{ group_name }}"
+
+# sudo chown -R tomcat:tomcat /opt/tomcat/
+- name: Ensure correct ownership on entire tomcat directory
+  ansible.builtin.file:
+    path: "{{ tomcat_home_directory }}"
+    owner: "{{ user_name}}"
+    group: "{{ group_name }}"
+    recurse: true
+    state: directory
+
+# sudo chmod -R u+x /opt/tomcat/bin
+- name: Make tomcat bin scripts executable for the owner
+  ansible.builtin.file:
+    path: "{{ tomcat_home_directory }}/bin"
+    mode: 'u+x'
+    recurse: true
+    state: directory
+
+- name: Deploy tomcat-users.xml configuration from template
+  ansible.builtin.template:
+    src: templates/tomcat-users.xml.j2
+    dest: /opt/tomcat/conf/tomcat-users.xml
+    owner: "{{ user_name}}"
+    group: "{{ group_name }}"
+    mode: '0755'
+  notify: Reload and Restart systemd daemon
+
+- name: Deploy context.xml for Tomcat Manager application
+  ansible.builtin.template:
+    src: templates/manager_context.xml.j2
+    dest: /opt/tomcat/webapps/manager/META-INF/context.xml
+    owner: "{{ user_name}}"
+    group: "{{ group_name }}"
+    mode: '0640'
+  notify: Reload and Restart systemd daemon
+
+- name: Deploy context.xml for Tomcat Host-Manager application
+  ansible.builtin.template:
+    src: templates/host_manager_context.xml.j2
+    dest: /opt/tomcat/webapps/host-manager/META-INF/context.xml
+    owner: "{{ user_name}}"
+    group: "{{ group_name }}"
+    mode: '0640'
+  notify: Reload and Restart systemd daemon
+
+- name: Dynamically find Java home directory
+  ansible.builtin.shell:
+    cmd: 'readlink -f /usr/bin/java | sed "s:/bin/java::"'
+  register: java_path_output
+  changed_when: false
+
+- name: Set java_home_path fact from command output
+  ansible.builtin.set_fact:
+    java_home_path: "{{ java_path_output.stdout | trim }}"
+
+- name: Display discovered Java Home path
+  ansible.builtin.debug:
+    msg: "The discovered Java Home path is: {{ java_home_path }}"
+
+- name: Deploy tomcat.service systemd unit file
+  ansible.builtin.template:
+    src: templates/tomcat.service.j2
+    dest: /etc/systemd/system/tomcat.service
+    owner: "{{ user_name}}"
+    group: "{{ group_name }}"
+    mode: '0644'
+  notify: Reload and Restart systemd daemon
+
+- name: Ensure Tomcat service is enabled and started
+  ansible.builtin.systemd:
+    name: "{{ user_name }}"
+    state: started
+    enabled: true
+  register: tomcat_status  
+
+- name: Print Tomcat active status summary
+  ansible.builtin.debug:
+    msg: "Tomcat state is currently: {{ tomcat_status.status.ActiveState | default('N/A') }}"

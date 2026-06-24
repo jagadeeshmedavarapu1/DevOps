@@ -1846,3 +1846,5 @@
     ```
 
 #### Ansible Roles 
+  * Command used to create a roles directory `ansible-galaxy role init <role_name>`
+  - Now install tree to see the directory level tree structure i.e `sudo apt install tree` (ubuntu), `sudo dnf install tree` for redhat. ![preview](Images/tree1.png)

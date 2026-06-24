@@ -1,5 +1,5 @@
 ---
-  - name: Installing Apache Tomcat server on Red Hat machine
+  - name: Deploy Apache Tomcat Server on Linux (Redhat/Ubuntu) Nodes
     hosts: "{{ chosen_servers | default('redhat_nodes,ubuntu_nodes') }}"
     gather_facts: true
     become: yes
@@ -76,7 +76,7 @@
           owner: "{{ user_name}}"
           group: "{{ group_name }}"
           mode: '0755'
-        notify: Restart tomcat
+        notify: Reload and Restart systemd daemon
 
       - name: Deploy context.xml for Tomcat Manager application
         ansible.builtin.template:
@@ -85,7 +85,7 @@
           owner: "{{ user_name}}"
           group: "{{ group_name }}"
           mode: '0640'
-        notify: Restart tomcat
+        notify: Reload and Restart systemd daemon
 
       - name: Deploy context.xml for Tomcat Host-Manager application
         ansible.builtin.template:
@@ -94,7 +94,7 @@
           owner: "{{ user_name}}"
           group: "{{ group_name }}"
           mode: '0640'
-        notify: Restart tomcat
+        notify: Reload and Restart systemd daemon
 
       - name: Dynamically find Java home directory
         ansible.builtin.shell:
@@ -117,9 +117,7 @@
           owner: "{{ user_name}}"
           group: "{{ group_name }}"
           mode: '0644'
-        notify:
-          - Reload systemd daemon
-          - Restart tomcat
+        notify: Reload and Restart systemd daemon
 
       - name: Ensure Tomcat service is enabled and started
         ansible.builtin.systemd:
@@ -133,11 +131,9 @@
           msg: "Tomcat state is currently: {{ tomcat_status.status.ActiveState | default('N/A') }}"
 
     handlers:
-      - name: Reload systemd daemon
-        ansible.builtin.systemd:
-          daemon_reload: true
-
-      - name: Restart tomcat
+      - name: Reload and Restart systemd daemon
         ansible.builtin.systemd:
           name: "{{ user_name }}"
-          state: restarted        
+          state: restarted  
+          enabled: yes        
+          daemon_reload: true   

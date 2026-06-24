@@ -1,0 +1,9 @@
+---
+# The playbook.yml file should be located in the root directory alongside the tomcat10 role definition.
+- name: Deploy Apache Tomcat Server on Linux (Redhat/Ubuntu) Nodes
+  hosts: "{{ chosen_servers | default('redhat_nodes,ubuntu_nodes') }}"
+  gather_facts: true
+  become: yes
+
+  roles:
+    - role: tomcat10
