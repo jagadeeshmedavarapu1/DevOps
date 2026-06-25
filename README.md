@@ -1925,5 +1925,5 @@
         roles:
           - role: tomcat10
     ```
-      
+  * From your current working directory (`Ansible/ansible-roles`), ensure that both the `tomcat10` role folder and the `deploy_tomcat.yml` playbook are located in this same folder. Next, execute the deployment by running `ansible-playbook -i tomcat10/tests/inventory deploy_tomcat.yml`, which will generate the output shown in the screenshot. ![preview](Images/tomcat24.png)
       
