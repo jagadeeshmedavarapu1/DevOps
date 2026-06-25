@@ -68,7 +68,7 @@
 - name: Deploy tomcat-users.xml configuration from template
   ansible.builtin.template:
     src: templates/tomcat-users.xml.j2
-    dest: /opt/tomcat/conf/tomcat-users.xml
+    dest: "{{ tomcat_home_directory }}/conf/tomcat-users.xml"
     owner: "{{ user_name}}"
     group: "{{ group_name }}"
     mode: '0755'
@@ -77,7 +77,7 @@
 - name: Deploy context.xml for Tomcat Manager application
   ansible.builtin.template:
     src: templates/manager_context.xml.j2
-    dest: /opt/tomcat/webapps/manager/META-INF/context.xml
+    dest: "{{ tomcat_home_directory }}/webapps/manager/META-INF/context.xml"
     owner: "{{ user_name}}"
     group: "{{ group_name }}"
     mode: '0640'
@@ -86,7 +86,7 @@
 - name: Deploy context.xml for Tomcat Host-Manager application
   ansible.builtin.template:
     src: templates/host_manager_context.xml.j2
-    dest: /opt/tomcat/webapps/host-manager/META-INF/context.xml
+    dest: "{{ tomcat_home_directory }}/webapps/host-manager/META-INF/context.xml"
     owner: "{{ user_name}}"
     group: "{{ group_name }}"
     mode: '0640'

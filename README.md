@@ -1927,3 +1927,9 @@
     ```
   * From your current working directory (`Ansible/ansible-roles`), ensure that both the `tomcat10` role folder and the `deploy_tomcat.yml` playbook are located in this same folder. Next, execute the deployment by running `ansible-playbook -i tomcat10/tests/inventory deploy_tomcat.yml`, which will generate the output shown in the screenshot. ![preview](Images/tomcat24.png)
       
+  * **Note**: **when do you actually use `remote_src: yes`**
+    * You only use `remote_src`: yes when the file already exists on the target node itself, and you want to move or duplicate it to another folder on that exact same machine.
+      * Without `remote_src: yes` (Default): Ansible looks for the file on your Ansible control machine and uploads it to the target node.
+      * With `remote_src: yes`: Ansible bypasses your control machine completely. It looks for the file directly on the target node, copies it, and pastes it into the new destination on that same target node.
+    * **Example**:
+      * If you download a Tomcat `.tar.gz` archive directly onto your target Red Hat or Ubuntu node using a `get_url` task, the file now lives on that remote node. To unarchive or copy it to `/opt/tomcat`, you must use `remote_src: yes` because the file is already on the remote server, not on your Ansible control machine.
