@@ -1846,7 +1846,51 @@
     ```
 
 #### Ansible Roles 
-  * Creating the Role: Use the command `ansible-galaxy role init <role_name>` to automatically generate the standard Ansible directory structure.
+  * **What are Ansible Roles?**
+    * An Ansible Role is a standardized, modular way of organizing your playbooks. Instead of putting all your tasks, variables, files, and configurations into one massive, messy YAML file, a role breaks them down into a strict, predefined directory structure.
+    * Think of a role as an independent, reusable blueprint for a specific technology (like installing Java, configuring a firewall, or deploying Apache Tomcat). Once written, a role can easily be shared across different projects, teams, or departments without needing modification.
+  * **Why Use Roles?**
+    * **Reusability**: You can write a role once (e.g., java21) and use it across ten different playbooks.
+    * **Maintainability**: If a package name changes, you only fix it in one specific file instead of searching through thousands of lines of playbook code.
+    * **Separation of Concerns**: Variables live in one place, tasks in another, and configuration files in another. This prevents "spaghetti code."
+    * **Role Dependencies**: Roles can call other roles automatically (e.g., telling your tomcat10 role to automatically run the java21 role first).
+  * **The Standard Role Directory Structure**
+    * When you create a role using `ansible-galaxy role init <role_name>`, Ansible generates a fixed set of directories. Each folder has a very specific job:
+
+      | Directory | File Location / Path | Scope & Common Usage |
+      | :---: | :--- | :--- |
+      | **`tasks/`** | `tasks/main.yml` | **The Core Engine:** Contains the primary, sequential list of automation steps and modules executed by the role. |
+      | **`defaults/`** | `defaults/main.yml` | **Default Variables:** Stores low-priority configuration values (lowest variable precedence) intended for easy user overrides. |
+      | **`vars/`** | `vars/main.yml` | **Internal Variables:** Stores high-priority constants and role-specific architecture logic that should never be overridden. |
+      | **`handlers/`** | `handlers/main.yml` | **Triggered Service Tasks:** Holds conditional system operations (restarts/reloads) that execute only when called via `notify`. |
+      | **`templates/`** | `templates/*.j2` | **Dynamic Blueprints:** Houses Jinja2 template configuration files processed with live variables before remote deployment. |
+      | **`files/`** | `files/*` | **Static Assets:** Stores raw, unaltered files (scripts, certificates) copied directly to target nodes without processing. |
+      | **`meta/`** | `meta/main.yml` | **Metadata & Dependencies:** Tracks author details, license configurations, supported platforms, and upstream role dependencies. |
+      | **`tests/`** | `tests/inventory`<br>`tests/test.yml` | **Validation Sandbox:** Contains local inventory and minimal playbook references used to test the role standalone or in CI/CD. |
+
+  * **Understanding Variable Precedence (Defaults vs. Vars)**
+    * One of the most confusing parts of Ansible roles is knowing whether to put a variable in defaults/main.yml or vars/main.yml. Ansible uses strict ordering:
+      * **`defaults/main.yml` (Lowest Priority)**: Use this for variables that act as configuration settings. For example, tomcat_port: 8080. A user running your role can easily change this to 8081 in their own playbook.
+      * **`vars/main.yml` (Highest Priority)**: Use this for internal architecture logic that will break the system if changed. For example, if your role expects a specific lockfile path on Linux, define it here so a user cannot accidentally break it from the command line.
+  * **How Roles Execute in a Playbook Wrapper**
+    * Roles cannot run by themselves because they do not contain a `hosts:` definition. They require a small external playbook wrapper (like `deploy_tomcat.yml`) to give them context:
+    ```yml
+    ---
+    - name: Deploy Infrastructure
+      hosts: webservers
+      become: yes
+
+      roles:
+        - java21
+        - tomcat10
+    ```
+    * When this playbook runs, Ansible takes the webservers inventory group and executes the entire java21 role from start to finish, and then immediately transitions into executing the tomcat10 role on those exact same servers.
+
+#### Ansible Galaxy
+  * 
+
+##### Creating Ansible roles to implement an Apache Tomcat installation.
+  * Creating the Role: Use the command `ansible-galaxy role init <role_name>` to automatically generate the standard Ansible directory structure i.e ansible-galaxy role init tomcat10
   * Installing the Tree Utility: To view the generated folder structure as a visual tree, install the utility tool using sudo apt install tree on Ubuntu, or sudo dnf install tree on Red Hat. ![preview](Images/tree1.png)
 
   * **Note**: Ensure you have Ansible installed before executing any `ansible-galaxy` commands. Since Ansible is already configured on the remote control node, you can verify its availability by checking the galaxy version. If you prefer to run `ansible-galaxy` commands directly from your local machine, you must first install the Ansible package using Homebrew (`brew update && brew install ansible`) and confirm the installation by running `ansible-galaxy --version`. ![preview](Images/ansible7.png)
@@ -1936,5 +1980,75 @@
     * **Example**:
       * If you download a Tomcat `.tar.gz` archive directly onto your target Red Hat or Ubuntu node using a `get_url` task, the file now lives on that remote node. To unarchive or copy it to `/opt/tomcat`, you must use `remote_src: yes` because the file is already on the remote server, not on your Ansible control machine.
 
-  * **Create the java21 role and integrate it into the existing `deploy_tomcat.yml` playbook.**
+  * **Create the java21 role and integrate it into the existing `deploy_tomcat.yml` playbook**
+    * **Initialize the Java 21 Role**:
+      * Navigate to `ansible-roles/` directory and generate the default role structure for your Java installation i.e `ansible-galaxy role init java21`
+      * **Note**: This command automatically creates the standard layout of subdirectories, each containing an empty main.yml file.
+    * **Configure Dynamic Variables in `java21`**:
+      * Open `java21/defaults/main.yml` and define your package variable using an inline Jinja2 conditional statement. This ensures the correct package name is resolved dynamically at runtime based on the target system's operating system family i.e
+      ```yml
+      ---
+      # java21/defaults/main.yml
+      java_package: "{{ 'java-21-openjdk-devel' if ansible_os_family == 'RedHat' else 'openjdk-21-jdk' }}"
+      ```
+    * **Define the Installation Tasks in `java21`**
+      * Open `java21/tasks/main.yml`. Move your Java setup logic out of the Tomcat role and place the multi-OS installation steps here. This configuration ensures that both Java 21 and wget are installed cleanly on your nodes.
+      ```yml
+        ---
+        - name: Install dependencies on Red Hat-based systems
+          ansible.builtin.dnf:
+            name:
+              - "{{ java_package }}"
+              - wget
+            state: present
+            update_cache: true
+          when: ansible_os_family == "RedHat"
+
+        - name: Install dependencies on Debian/Ubuntu-based systems
+          ansible.builtin.apt:
+            name:
+              - "{{ java_package }}"
+              - wget
+            state: present
+            update_cache: true
+          when: ansible_os_family == "Debian"
+      ```
+    * **Add Metadata to the `java21 Role`**
+      * Open `java21/meta/main.yml` to supply role identification details. Update the `galaxy_info` block to include your information. If this standalone role does not depend on any other automation layers, ensure the dependencies block remains an empty list.
+      ```yml
+      galaxy_info:
+        author: jagadeesh
+        description: java21 package installation for Debian/RedHat
+        company: your company (optional)
+
+        license: license (GPL-2.0-or-later, MIT, etc)
+
+        min_ansible_version: "2.2"
+
+        galaxy_tags: []
+
+      dependencies: []
+      ```
+    * **Update the tomcat10 Role and Dependencies**
+      * To prevent configuration drift and set up your execution hierarchy, you must modify your existing Tomcat role components:
+        * **Remove Duplicate Variables**: Open `tomcat10/defaults/main.yml` and delete the old `java_package` definition, as it is now centrally managed by the Java role.
+        * **Remove Old Tasks**: Open `tomcat10/tasks/main.yml` and delete the old plays previously used to install Java on Debian and Red Hat machines.
+        * **Declare the Role Dependency**: Open `tomcat10/meta/main.yml`. Scroll down to the dependencies section and map your newly created role. This forces Ansible to download and fully execute java21 on the worker nodes before running any Tomcat configuration steps.
+        ```yml
+        dependencies:
+          - role: java21
+        ```
+    * **Update the Test Suite Reference (Optional Best Practice)**
+      * Open `tomcat10/tests/test.yml` and append java21 to the roles list to maintain an accurate local reference blueprint
+      ```yml
+      roles:
+        - java21
+        - tomcat10
+      ```
+    * **Executing the Playbook**
+      * With both roles integrated, execute your main deployment playbook wrapper from the root of your project directory.
+        * **Target Only Red Hat Worker Nodes Dynamically**: Pass your host tracking parameter as an extra variable via the command line interface to restrict execution (execute the command from `Ansible/ansible-roles`)i.e `ansible-playbook -i tomcat10/tests/inventory deploy_tomcat.yml -e "chosen_servers=redhat_nodes"`
+        * **Run on All Available Inventory Nodes**: You can run the following command i.e `ansible-playbook -i tomcat10/tests/inventory deploy_tomcat.yml`.
+
+  * **Installing java role from `geerlingguy.java` and integrate it into the existing `deploy_tomcat.yml` playbook**
     * 
