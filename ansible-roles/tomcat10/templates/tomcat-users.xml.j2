@@ -54,8 +54,8 @@
   <user username="role1" password="<must-be-changed>" roles="role1"/>
 -->
     <role rolename="manager-gui" />
-    <user username="manager" password="manager_password" roles="manager-gui" />
+    <user username="{{ tomcat_manager_username }}" password="{{ tomcat_manager_passwd }}" roles="manager-gui" />
 
     <role rolename="admin-gui" />
-    <user username="admin" password="admin_password" roles="manager-gui,admin-gui" />
+    <user username="{{ tomcat_host_admin_username }}" password="{{ tomcat_host_admin_passwd }}" roles="manager-gui,admin-gui" />
 </tomcat-users>    

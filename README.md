@@ -1889,7 +1889,7 @@
 #### Ansible Galaxy
   * 
 
-##### Creating Ansible roles to implement an Apache Tomcat installation.
+##### Utilising Ansible Galaxy to create roles for automated Apache Tomcat installation..
   * Creating the Role: Use the command `ansible-galaxy role init <role_name>` to automatically generate the standard Ansible directory structure i.e ansible-galaxy role init tomcat10
   * Installing the Tree Utility: To view the generated folder structure as a visual tree, install the utility tool using sudo apt install tree on Ubuntu, or sudo dnf install tree on Red Hat. ![preview](Images/tree1.png)
 
@@ -2100,7 +2100,99 @@
         roles:
           - role: tomcat10
           # - role: java21
-          # - role: geerlingguy.java # You no need to mention this role as you can already defined under dependecy of tomcat10 role
+          # - role: geerlingguy.java # You no need to mention this role as you already defined under dependecy of tomcat10 role (tomcat10/mata/main.yml)
         ```
     * **How it executes now**
       * When you run your main deploy_tomcat.yml playbook, Ansible reads the Tomcat metadata, pauses, jumps out to execute the downloaded geerlingguy.java role to install Java 21 across your nodes, and then seamlessly returns to run your Tomcat tasks. You can use `ansible-playbook -i tomcat10/tests/inventory deploy_tomcat.yml`. ![preview](Images/ansible8.png)
+
+#### Ansible Vault
+  * Ansible Vault is a built-in feature of Ansible that allows you to encrypt sensitive data—such as passwords, API keys, and private SSH keys—directly within your playbooks, variables, or configuration files.
+  * It uses the AES-256 encryption standard to secure secrets. Because files encrypted with Ansible Vault are stored as plain text ciphertext, you can safely commit them to public or private version control systems like GitHub or GitLab.
+  * **How Ansible Vault Works**:
+    * **Symmetric Encryption**: Ansible Vault uses a single password (a pre-shared key) to both encrypt and decrypt data.
+    * **On-the-Fly Decryption**: When you run an Ansible playbook, you provide the Vault password. Ansible decrypts the data in memory, executes the tasks, and never writes the unencrypted secrets back to the disk.
+    * **Granular Security**: You can encrypt entire files (like a vars.yml file) or encrypt individual variable strings inside an otherwise plain-text file (Vault ID / Inline Encryption).
+  * **How to Work with Ansible Vault**
+    * **Creating an Encrypted File**: To create a brand-new file that is encrypted from the start, use the `create` command. It will prompt you for a password and open your system's default text editor (e.g., `vim` or `nano`).
+      * `ansible-vault create secrets.yml`
+      * Inside this file, you can define your secrets like normal YAML variables:
+        ```yaml
+        db_password: "SuperSecretPassword123!"
+        api_key: "AbCdEf12345"
+        ```
+      * When you save and close the file, it will appear as block text starting with `$ANSIBLE_VAULT;1.1;AES256`.
+    * **Encrypting an Existing File**: If you already have a plain-text variables file and want to encrypt it, use the encrypt command: `ansible-vault encrypt production_vars.yml`
+    * **Editing an Encrypted File**: To modify the contents of an encrypted file without exposing it permanently, use edit. This temporarily decrypts the file in memory, lets you make changes, and re-encrypts it automatically when saved. `ansible-vault edit secrets.yml`
+    * **Viewing an Encrypted File**: If you only need to read the contents of the file without changing anything, use view: `ansible-vault view secrets.yml`
+    * **Permanently Decrypting a File**: If you need to revert an encrypted file back into permanent, plain-text YAML format, use decrypt: `ansible-vault decrypt secrets.yml`
+    * **Inline Encryption (Encrypting Specific Strings)**: Instead of encrypting a whole file, you can encrypt just a single value. This keeps your variable names readable in Git, which makes code review much easier. `ansible-vault encrypt_string 'SuperSecretPassword123!' --name 'db_password'`
+      * This outputs a block of ciphertext that you can copy and paste directly into a standard plain-text YAML file:
+        ```yaml
+        # vars/main.yml
+        db_port: 5432
+        db_user: "postgres"
+        db_password: !vault |
+                  $ANSIBLE_VAULT;1.1;AES256;main
+                  6365363430343739...
+        ```
+    * **Running Playbooks with Vault Secrets**: Because the files are encrypted, running a standard ansible-playbook site.yml command will fail with a decryption error. You must tell Ansible how to find the password.
+      * **Prompt for the password (Interactive)**: Ansible will pause and ask you to type the vault password before running the playbook. `ansible-playbook site.yml --ask-vault-pass`
+      * **Use a password file (Automated / CI-CD)**: You can store the password in a local, uncommitted file (and secure it using chmod 400) so Ansible can read it automatically. `ansible-playbook site.yml --vault-password-file ~/.ansible_vault_pass`
+      * **Environmental Variable**: You can export the path to your password file as an environment variable so you do not have to append flags to your commands:
+        ```bash
+        export ANSIBLE_VAULT_PASSWORD_FILE=~/.ansible_vault_pass
+        ansible-playbook site.yml
+        ```
+    * **Best Practices for Enterprise Security**
+      * Never commit password files: Ensure your password files or scripts are explicitly added to your project's `.gitignore` file.
+      * **Use Vault IDs for multiple environments**: If you manage development, staging, and production secrets, you can set up unique passwords for each environment using Vault IDs:
+        ```bash
+        ansible-vault encrypt vars_prod.yml --vault-id prod@prompt
+        ```
+      * **Restrict local permissions**: If you are caching vault passwords locally, use strict file system permissions (chmod 600) to ensure other local users cannot read your secret string files.
+
+##### Ansible Vault Use Case
+  * Deploying Tomcat to worker nodes requires configuring tomcat-users.xml.j2 to access the Manager App and Host Manager. Storing these required credentials in plain text risks a password compromise when pushing to a public GitHub repository.
+    * Secure the credentials using Ansible Vault i.e
+      * **Action**: Create an encrypted secrets file named tomcat_manager.yml.
+      * **Location**: Save it under tomcat10/vars/ (chosen over defaults/ as the ideal practice for sensitive production variables).
+  * **Encrypting Secrets with Ansible Vault**:
+    1. **Navigate and Create**: Change to the vars directory and create the encrypted file:
+      ```bash
+      cd Ansible/ansible-roles/tomcat10/vars
+      ansible-vault create tomcat_manager.yml
+      ```
+    2. **Set a Password**: Enter and confirm your vault password when prompted.
+    3. **Add Content**: The Vim editor will open automatically. Add your admin and manager credentials, then save and exit (`:wq!`).
+      ```yml
+      tomcat_admin_user: "admin"
+      tomcat_admin_password: "SecureAdminPassword"
+      tomcat_manager_user: "manager"
+      tomcat_manager_password: "SecureManagerPassword"
+      ```
+    4. **Verify Encryption**: Check the file content using `cat`: If successful, the output will start with `$ANSIBLE_VAULT;1.1;AES256`, confirming the file is fully encrypted.
+      ```bash
+      cat tomcat_manager.yml
+      ```
+  * **Update the Tomcat Template**
+    * Modify your `tomcat-users.xml.j2` file by replacing the plain-text usernames and passwords with the exact variables defined inside your encrypted tomcat_manager.yml file.
+  * **Inject Secrets into the Playbook**
+    * Navigate to your top-level Ansible playbook file and add the `vars_files` directive to import your encrypted secret file. 
+    * **Note**: When defining the file path under vars_files, always provide the relative path starting from the exact directory where your main ansible-playbook file exists. i.e `tomcat10/vars/tomcat_manager.yml`
+      ```yml
+      ---
+      - name: Deploy Apache Tomcat Server on Linux (Redhat/Ubuntu) Nodes
+        hosts: "{{ chosen_servers | default('redhat_nodes,ubuntu_nodes') }}"
+        gather_facts: true
+        become: yes
+        vars_files:
+          - tomcat10/vars/tomcat_manager.yml
+
+        roles:
+          - role: tomcat10      
+      ```
+  * **Run the Playbook Securely**
+    * Execute your playbook by passing the required vault decryption flag: `ansible-playbook deploy_tomcat.yml --ask-vault-pass`
+    * **What happens if you use or omit this flag?**
+      * **With `--ask-vault-pass`**: Ansible will securely prompt you to type your Vault password in the terminal. It decrypts tomcat_manager.yml in memory during execution to seamlessly deploy your secrets.
+      * **Without `--ask-vault-pass`**: The playbook execution will fail immediately with an AnsibleVaultFormatError because Ansible cannot read the encrypted variables in your vars_files.
