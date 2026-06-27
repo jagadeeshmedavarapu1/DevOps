@@ -3,4 +3,5 @@
   remote_user: root
   roles:
     - tomcat10
-    - geerlingguy.java
+    # - java21 # Disabling custom created role
+    - geerlingguy.java # Adding pre-installed role from geerlingguy

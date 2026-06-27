@@ -80,7 +80,7 @@
     dest: "{{ tomcat_home_directory }}/webapps/manager/META-INF/context.xml"
     owner: "{{ user_name}}"
     group: "{{ group_name }}"
-    mode: '0640'
+    mode: '0644'
   notify: Reload and Restart systemd daemon
 
 - name: Deploy context.xml for Tomcat Host-Manager application
@@ -89,7 +89,7 @@
     dest: "{{ tomcat_home_directory }}/webapps/host-manager/META-INF/context.xml"
     owner: "{{ user_name}}"
     group: "{{ group_name }}"
-    mode: '0640'
+    mode: '0644'
   notify: Reload and Restart systemd daemon
 
 - name: Dynamically find Java home directory

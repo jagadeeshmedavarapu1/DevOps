@@ -5,3 +5,5 @@
   user_name: tomcat 
   tomcat_home_directory: /opt/tomcat
   tomcat_shell: "{{ '/sbin/nologin' if ansible_os_family == 'RedHat' else '/bin/false' }}" 
+  # java_package: "{{ 'java-21-openjdk-devel' if ansible_os_family == 'RedHat' else 'openjdk-21-jdk' }}" 
+  # java_home_path: /usr/lib/jvm/java-21-openjdk (passing dynamically from tomcat.yaml)
