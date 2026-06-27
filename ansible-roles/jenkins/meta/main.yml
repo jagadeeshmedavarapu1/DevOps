@@ -36,5 +36,5 @@ dependencies:
   - role: geerlingguy.java
     vars: 
       java_packages:
-        - "{{ 'java-{{ java_version }}-openjdk-devel' if ansible_os_family == 'RedHat' else 'openjdk-{{ java_version }}-jdk' }}"
+        - "{{ 'java-' ~ java_version ~ '-openjdk-devel' if ansible_os_family == 'RedHat' else 'openjdk-' ~ java_version ~ '-jdk' }}"
   - role: tomcat10      
