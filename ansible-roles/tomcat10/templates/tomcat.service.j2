@@ -8,7 +8,7 @@
       User=tomcat
       Group=tomcat
 
-      Environment="JAVA_HOME={{ java_home_path }}" #Passing Dynamically from tomcat.yaml
+      Environment="JAVA_HOME={{ java_home_path }}"
       Environment="JAVA_OPTS=-Djava.security.egd=file:///dev/urandom"
       Environment="CATALINA_BASE={{ tomcat_home_directory }}"
       Environment="CATALINA_HOME={{ tomcat_home_directory }}"
